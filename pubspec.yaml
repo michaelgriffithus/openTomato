@@ -1,0 +1,83 @@
+name: open_tomato
+description: A tomato-growing assistant that turns Home Assistant sensor readings into plain, stage-aware guidance.
+publish_to: 'none'
+# Build number MUST equal AppDatabase.schemaVersion (lib/core/database/database.dart).
+# A build's identity says which database shape it expects. Bump both together.
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+
+  # Database
+  drift: ^2.23.0
+  sqlite3_flutter_libs: ^0.5.24
+  sqlite3: ^2.9.4
+  path_provider: ^2.1.5
+  path: ^1.9.0
+
+  # Navigation
+  go_router: ^15.0.1
+
+  # Formatting
+  intl: ^0.19.0
+
+  # Home Assistant REST/WebSocket and assistant provider HTTP
+  http: ^1.2.0
+
+  # Charts
+  fl_chart: ^0.69.2
+
+  # Photos
+  image_picker: ^1.0.0
+  flutter_image_compress: ^2.1.0
+
+  # Secrets (Home Assistant token, assistant API keys) never touch the database
+  flutter_secure_storage: ^9.2.2
+
+  # Misc
+  package_info_plus: ^9.0.1
+  url_launcher: ^6.3.2
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+  # Code generation (Drift only)
+  build_runner: ^2.4.14
+  drift_dev: ^2.23.0
+
+  # App icon generation
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/brand/
+
+  fonts:
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-Regular.ttf
+        - asset: assets/fonts/PlayfairDisplay-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlayfairDisplay-Bold.ttf
+          weight: 700
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/brand/opentomato-icon.png"
+  macos:
+    generate: true
+    image_path: "assets/brand/opentomato-icon.png"
