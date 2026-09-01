@@ -11,3 +11,9 @@ final growSpaceByIdProvider =
     StreamProvider.family<GrowSpace?, String>((ref, id) {
   return ref.watch(growSpacesDaoProvider).watchGrowSpaceById(id);
 });
+
+final growSpaceStageTargetsProvider =
+    FutureProvider.family<List<GrowSpaceStageTarget>, String>((ref, id) {
+  ref.watch(growSpacesStreamProvider);
+  return ref.watch(growSpacesDaoProvider).getStageTargetsForGrowSpace(id);
+});
