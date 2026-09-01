@@ -51,7 +51,7 @@ class AssistantDao extends DatabaseAccessor<AppDatabase>
   Stream<List<AssistantMessage>> watchMessages(int conversationId) {
     return (select(assistantMessages)
           ..where((t) => t.conversationId.equals(conversationId))
-          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+          ..orderBy([(t) => OrderingTerm.asc(t.id)]))
         .watch();
   }
 
@@ -62,7 +62,7 @@ class AssistantDao extends DatabaseAccessor<AppDatabase>
   }) async {
     final rows = await (select(assistantMessages)
           ..where((t) => t.conversationId.equals(conversationId))
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..orderBy([(t) => OrderingTerm.desc(t.id)])
           ..limit(limit))
         .get();
     return rows.reversed.toList(growable: false);
