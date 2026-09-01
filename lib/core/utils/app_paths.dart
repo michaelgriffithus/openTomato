@@ -7,6 +7,8 @@ class AppPaths {
     _documentsDir = documentsDir;
   }
 
+  static bool get isInitialized => _documentsDir != null;
+
   static String get documentsDir {
     final dir = _documentsDir;
     if (dir == null) {

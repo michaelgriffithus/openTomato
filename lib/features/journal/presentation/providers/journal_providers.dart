@@ -2,8 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/database/database.dart';
 import '../../../../core/providers/database_provider.dart';
+import '../../data/models/journal_entry_with_details.dart';
+import '../../data/repositories/journal_repository.dart';
 
-/// Every entry, newest first, with its photos and plants.
+final journalRepositoryProvider = Provider<JournalRepository>((ref) {
+  return JournalRepository(
+    ref.watch(journalEntriesDaoProvider),
+    ref.watch(journalPhotosDaoProvider),
+  );
+});
+
+/// Every entry, newest first, with its photos and plants (database rows).
 final allJournalEntriesProvider =
     StreamProvider<List<JournalEntryWithPlantsAndPhotosEntity>>((ref) {
   return ref.watch(journalEntriesDaoProvider).watchAllEntries();
@@ -13,6 +22,19 @@ final plantJournalEntriesProvider =
     StreamProvider.family<List<JournalEntryWithPlantsAndPhotosEntity>, int>(
         (ref, plantId) {
   return ref.watch(journalEntriesDaoProvider).watchEntriesForPlant(plantId);
+});
+
+/// Domain view of every entry, newest first.
+final journalTimelineEntriesProvider =
+    StreamProvider<List<JournalEntryWithPlantsAndPhotos>>((ref) {
+  return ref.watch(journalRepositoryProvider).watchAllEntries();
+});
+
+final journalEntryByIdProvider =
+    FutureProvider.family<JournalEntryDetails?, int>((ref, entryId) {
+  // Re-run when the entries table changes.
+  ref.watch(allJournalEntriesProvider);
+  return ref.watch(journalRepositoryProvider).getEntryById(entryId);
 });
 
 /// Newest photo thumbnail for a plant, or null.
