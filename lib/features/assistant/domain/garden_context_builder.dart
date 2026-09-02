@@ -85,7 +85,7 @@ class GardenContextBuilder {
       final flags = [
         for (final m in eval.metrics)
           if (m.status != MetricRangeStatus.unknown)
-            '${m.metric.label.toLowerCase()} ${m.status.name}',
+            '${m.metric.label.toLowerCase()} ${_statusWords(m.status)}',
       ];
       b.writeln('Range check: ${flags.join(', ')}.');
     }
@@ -165,3 +165,13 @@ class GardenContextBuilder {
   String _clip(String s, int max) =>
       s.length <= max ? s : '${s.substring(0, max - 1)}…';
 }
+
+/// Plain words for the context block; enum names must never reach a provider.
+String _statusWords(MetricRangeStatus status) => switch (status) {
+      MetricRangeStatus.inRange => 'in range',
+      MetricRangeStatus.nearLow => 'near the low boundary',
+      MetricRangeStatus.nearHigh => 'near the high boundary',
+      MetricRangeStatus.low => 'below range',
+      MetricRangeStatus.high => 'above range',
+      MetricRangeStatus.unknown => 'unknown',
+    };

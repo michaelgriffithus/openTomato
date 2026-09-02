@@ -1,0 +1,1 @@
+tomato,garden,home assistant,greenhouse,vpd,humidity,temperature,seedling,journal,vegetable,grow

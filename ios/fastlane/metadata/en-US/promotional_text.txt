@@ -1,0 +1,1 @@
+Your Home Assistant sensors, read against published tomato stage windows. In range, near the boundary, or out, at a glance. No accounts, no cloud, no scores.

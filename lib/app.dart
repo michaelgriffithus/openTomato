@@ -69,29 +69,6 @@ final appRouter = GoRouter(
               builder: (_, __) => const TimelineScreen(),
               routes: [
                 GoRoute(path: 'tasks', builder: (_, __) => const TodosScreen()),
-                GoRoute(
-                  path: 'new',
-                  builder: (_, state) => JournalEntryFormScreen(
-                    initialType: EntryType.fromStorage(
-                      state.uri.queryParameters['type'],
-                    ),
-                    initialPlantId: _intParam(state, 'plantId'),
-                    initialTitle: state.uri.queryParameters['title'],
-                    completesTodoId: _intParam(state, 'todoId'),
-                  ),
-                ),
-                GoRoute(
-                  path: 'edit/:id',
-                  builder: (_, state) => JournalEntryFormScreen(
-                    entryId: int.parse(state.pathParameters['id']!),
-                  ),
-                ),
-                GoRoute(
-                  path: ':id',
-                  builder: (_, state) => JournalEntryDetailScreen(
-                    entryId: int.parse(state.pathParameters['id']!),
-                  ),
-                ),
               ],
             ),
           ],
@@ -123,6 +100,31 @@ final appRouter = GoRouter(
           ],
         ),
       ],
+    ),
+    // Journal entry routes live outside the shell on purpose: plant detail
+    // (also outside the shell) pushes them, and pushing a shell-nested route
+    // from a non-shell screen re-creates the shell page and trips the
+    // navigator's duplicate-key assertion.
+    GoRoute(
+      path: '/timeline/new',
+      builder: (_, state) => JournalEntryFormScreen(
+        initialType: EntryType.fromStorage(state.uri.queryParameters['type']),
+        initialPlantId: _intParam(state, 'plantId'),
+        initialTitle: state.uri.queryParameters['title'],
+        completesTodoId: _intParam(state, 'todoId'),
+      ),
+    ),
+    GoRoute(
+      path: '/timeline/edit/:id',
+      builder: (_, state) => JournalEntryFormScreen(
+        entryId: int.parse(state.pathParameters['id']!),
+      ),
+    ),
+    GoRoute(
+      path: '/timeline/:id',
+      builder: (_, state) => JournalEntryDetailScreen(
+        entryId: int.parse(state.pathParameters['id']!),
+      ),
     ),
     GoRoute(
       path: '/plants/create',

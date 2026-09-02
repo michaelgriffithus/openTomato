@@ -1,0 +1,8 @@
+# Signing certificates and profiles live in a private git repo whose URL is
+# supplied only through MATCH_GIT_URL. Nothing identifying is committed here.
+git_url(ENV["MATCH_GIT_URL"]) if ENV["MATCH_GIT_URL"]
+storage_mode("git")
+type("appstore")
+app_identifier([ENV.fetch("APP_IDENTIFIER", "com.griffith.made.opentomato")])
+team_id(ENV["FASTLANE_TEAM_ID"]) if ENV["FASTLANE_TEAM_ID"]
+force_legacy_encryption(true)

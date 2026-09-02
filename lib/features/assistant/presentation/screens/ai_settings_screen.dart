@@ -106,7 +106,20 @@ class _ProviderCardState extends ConsumerState<_ProviderCard> {
   @override
   void didUpdateWidget(covariant _ProviderCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.row?.id != widget.row?.id) _loadKeyState();
+    if (oldWidget.row?.id != widget.row?.id) {
+      _loadKeyState();
+      _syncFieldsFromRow();
+    }
+  }
+
+  /// The row arrives after the first build (and again after a save), so the
+  /// controllers must follow it; otherwise a later "Save & use" would write
+  /// back the empty defaults and silently drop a saved base URL or prompt.
+  void _syncFieldsFromRow() {
+    final row = widget.row;
+    _model.text = row?.modelName ?? widget.defaultModel;
+    _baseUrl.text = row?.baseUrl ?? '';
+    _prompt.text = row?.systemPromptOverride ?? '';
   }
 
   @override

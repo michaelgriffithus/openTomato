@@ -82,15 +82,18 @@ class HaHistoryBackfillService {
     if (lastRunAt != null && now.difference(lastRunAt) < minRunInterval) {
       return 0;
     }
-    final settings = await _settings.getSettings();
-    if (settings == null || !settings.isEnabled) return 0;
-    final token = await _settings.getAccessToken();
-    if (token == null || token.isEmpty) return 0;
-
+    // Claim the run before the first await: the post-frame callback and the
+    // resumed lifecycle event both call this at launch, and two passes that
+    // interleave here would each fetch the whole window.
     _running = true;
-    _lastRunAt = now;
-    _lastPassHadFetchFailures = false;
     try {
+      final settings = await _settings.getSettings();
+      if (settings == null || !settings.isEnabled) return 0;
+      final token = await _settings.getAccessToken();
+      if (token == null || token.isEmpty) return 0;
+
+      _lastRunAt = now;
+      _lastPassHadFetchFailures = false;
       var written = 0;
       for (final space in await _growSpaces.getEnabledGrowSpaces()) {
         written += await _backfillGrowSpace(
@@ -109,6 +112,35 @@ class HaHistoryBackfillService {
     }
   }
 
+  /// Where a pass starts fetching. Normally the second after the newest
+  /// stored row. When the stored rows do not reach the start of the lookback
+  /// window (a fresh mapping, where the live path has already written a
+  /// minute-old reading), start at [earliest] instead so the first pass fills
+  /// the whole window rather than treating that live row as "caught up".
+  /// Rows already stored are upserted by timestamp, so refetching is safe.
+  Future<DateTime> _fetchStart(
+    String growSpaceId, {
+    required DateTime earliest,
+    required DateTime now,
+  }) async {
+    final latestStored = await _snapshots.getLatestForGrowSpace(growSpaceId);
+    if (latestStored == null) return earliest;
+    final stored = await _snapshots.getTimestampsInWindow(
+      growSpaceId: growSpaceId,
+      fromInclusive: earliest,
+      toInclusive: now,
+    );
+    DateTime? oldest;
+    for (final t in stored) {
+      if (oldest == null || t.isBefore(oldest)) oldest = t;
+    }
+    if (oldest == null || oldest.difference(earliest) >= minGap) {
+      return earliest;
+    }
+    final from = latestStored.timestamp.add(const Duration(seconds: 1));
+    return from.isBefore(earliest) ? earliest : from;
+  }
+
   Future<int> _backfillGrowSpace({
     required String growSpaceId,
     required Map<String, String> mappings,
@@ -122,11 +154,7 @@ class HaHistoryBackfillService {
     if (airEntities.isEmpty) return 0;
 
     final earliest = now.subtract(maxLookback);
-    final latestStored = await _snapshots.getLatestForGrowSpace(growSpaceId);
-    var from = latestStored == null
-        ? earliest
-        : latestStored.timestamp.add(const Duration(seconds: 1));
-    if (from.isBefore(earliest)) from = earliest;
+    final from = await _fetchStart(growSpaceId, earliest: earliest, now: now);
     if (now.difference(from) < minGap) return 0;
 
     final samplesByField = <String, List<HaHistoryPoint>>{};

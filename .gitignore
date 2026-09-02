@@ -29,3 +29,21 @@ ios/Pods/
 /android/.gradle/
 /android/local.properties
 **/doc/api/
+
+# Release tooling (scripts/release.sh, fastlane). Signing material and
+# generated reports never enter the repo.
+vendor/
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/test_output/
+ios/fastlane/README.md
+*.ipa
+*.dSYM.zip
+*.p8
+*.p12
+*.cer
+*.mobileprovision
+.env
+
+# Private leak-scan word list; never committed.
+tool/leak_scan.local

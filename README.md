@@ -99,6 +99,15 @@ a provider scope. More in [docs/architecture.md](docs/architecture.md).
 - Automatic Home Assistant discovery on the local network.
 - Stage playbook: a short "what to watch for" per stage.
 
+## Privacy and support
+
+No account, no server, no analytics. The full policy is in
+[docs/privacy.md](docs/privacy.md). Questions and bug reports go to
+[GitHub issues](https://github.com/michaelgriffithus/openTomato/issues).
+
+An App Store listing is in progress; the release path is documented in
+[docs/release.md](docs/release.md).
+
 ## Contributing
 
 Read [CONVENTIONS.md](CONVENTIONS.md) first. Run `tool/leak_scan.sh` and

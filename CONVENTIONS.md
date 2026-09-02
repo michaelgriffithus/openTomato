@@ -1,7 +1,6 @@
 # OpenTomato Conventions
 
-This is the single source of truth for anyone working in this
-repo.
+This is the single source of truth for anyone working in this repo.
 
 ## What OpenTomato is
 
@@ -19,9 +18,9 @@ API key and sends only a short, visible context block.
 Say **grow space** (not a hardware-flavoured name), **variety**, **assistant**,
 **inspect**, **boundary case**, and **predictions** (as in "no predictions"). Stage
 names are exactly: seedling, vegetative, flowering, fruit set, ripening,
-harvesting. The list of words and identifiers that must never appear in this
-repo lives in `tool/leak_scan.sh`; that script is the authority, so this document
-does not repeat it.
+harvesting. `tool/leak_scan.sh` checks the tree against a private word list
+(`tool/leak_scan.local`, untracked; CI gets it as secrets) so that names from
+other projects never land here.
 
 Run the scan before every commit (the `.githooks/pre-commit` hook does; enable it
 with `git config core.hooksPath .githooks`).
@@ -69,6 +68,17 @@ with `git config core.hooksPath .githooks`).
   which only advances when a value changes.
 - Validate a mapped entity's value against a plausible range before storing it.
   A CPU temperature mapped as air temperature poisons every derived number.
+
+## Release
+
+App Store builds go through `scripts/release.sh` (fastlane underneath); never
+`flutter build ipa`. Every Apple identifier (team id, key id, issuer id, signing
+repo URL) comes from the environment and is never written into this public
+repo, not even as a fallback. A TestFlight upload bumps the pubspec build
+number and `AppDatabase.schemaVersion` together in one commit; an empty schema
+step needs no `onUpgrade` block. Listing text lives in
+`ios/fastlane/metadata/` and must pass `tool/leak_scan.sh`. Full runbook and
+App Store Connect answers: `docs/release.md`.
 
 ## Commands
 

@@ -25,7 +25,14 @@ jobs:
       - run: flutter analyze --fatal-infos
       - run: flutter test
       - run: tool/leak_scan_test.sh
+        env:
+          LEAK_SCAN_UNBOUNDED: ${{ secrets.LEAK_SCAN_UNBOUNDED }}
+          LEAK_SCAN_BOUNDED: ${{ secrets.LEAK_SCAN_BOUNDED }}
+          LEAK_SCAN_BAD_LINE: ${{ secrets.LEAK_SCAN_BAD_LINE }}
       - run: tool/leak_scan.sh --history
+        env:
+          LEAK_SCAN_UNBOUNDED: ${{ secrets.LEAK_SCAN_UNBOUNDED }}
+          LEAK_SCAN_BOUNDED: ${{ secrets.LEAK_SCAN_BOUNDED }}
       - run: tool/size_caps.sh
 
   ios-build:

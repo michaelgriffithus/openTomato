@@ -180,6 +180,52 @@ void main() {
       );
     });
 
+    test('a fresh mapping whose only row is a live reading fills the window',
+        () async {
+      await settings.saveSettings(
+        baseUrl: 'http://ha.local',
+        accessToken: 'tok',
+        isEnabled: true,
+        pollIntervalMinutes: 15,
+        liveWarnThresholdMinutes: 5,
+        liveStaleThresholdMinutes: 15,
+      );
+      final now = DateTime(2026, 9, 1, 12);
+      // The live path wrote its first reading a minute ago, before this pass.
+      await db.environmentSnapshotsDao.upsertSnapshot(
+        growSpaceId: 'default',
+        timestamp: now.subtract(const Duration(minutes: 1)),
+        source: 'ha_live',
+        tempF: 73,
+        rhPct: 60,
+        vpdKpa: 1.0,
+        upstreamVpdKpa: null,
+      );
+      final froms = <DateTime>[];
+      final service = HaHistoryBackfillService(
+        snapshots: db.environmentSnapshotsDao,
+        settings: settings,
+        growSpaces: spaces,
+        sync: sync,
+        now: () => now,
+        seriesLoader: ({
+          required entityId,
+          required from,
+          required to,
+          required field,
+        }) async {
+          froms.add(from);
+          return [HaHistoryPoint(timestamp: from, value: 70)];
+        },
+      );
+      expect(await service.runIfEligible(), 1);
+      expect(
+        froms,
+        everyElement(now.subtract(HaHistoryBackfillService.maxLookback)),
+        reason: 'the whole lookback window is fetched, not the minute gap',
+      );
+    });
+
     test('a wholesale-failed pass does not arm the throttle', () async {
       await settings.saveSettings(
         baseUrl: 'http://ha.local',

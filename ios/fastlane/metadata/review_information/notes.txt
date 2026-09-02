@@ -1,0 +1,11 @@
+OpenTomato is a free, open-source tomato-growing journal. There is no account, no sign-in, no demo login, and no in-app purchase.
+
+1. Home Assistant is optional. The app reads sensor states from a Home Assistant server on the user's own network using a token the user creates. Without one, the Today screen shows a clear unconfigured state and every other feature (plants, varieties, journal, tasks) works normally. No test server is required to review the app.
+
+2. The assistant is optional and bring-your-own-key. The user pastes their own Anthropic or OpenAI API key, which is stored in the device keychain. Before the first message the app shows a consent screen with the exact text it will send (a short system prompt plus a context block built from the user's own plants, entries, and readings). Photos are never sent. Nothing is purchased through the app and no key is bundled.
+
+3. Data stays on the device. There are no analytics, no tracking, no advertising identifiers, and no server of our own. The privacy policy at the URL in App Information describes this in full.
+
+4. Permissions: camera and photo library are used only to attach photos to the user's own journal; local network access is used only to reach the user's Home Assistant.
+
+5. Source code: https://github.com/michaelgriffithus/openTomato

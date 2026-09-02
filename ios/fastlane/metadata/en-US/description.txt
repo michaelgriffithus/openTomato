@@ -1,0 +1,21 @@
+OpenTomato is a small, honest layer between the sensors you already have in Home Assistant and the published temperature, humidity, and VPD windows for each stage of a tomato plant.
+
+WHAT IT DOES
+
+• Reads temperature, humidity, and optionally VPD and soil moisture from your own Home Assistant over your own network. No add-on, no cloud, no account.
+• Knows what stage your tomatoes are in: seedling, vegetative, flowering, fruit set, ripening, harvesting. Each stage has a published window, and you can override any of them per grow space.
+• Tells you at a glance whether a grow space is in range, near the boundary, or out, with time-in-range for the last 24 hours and 7 days and a trace of the day.
+• Keeps a small journal: plants and varieties, entries with photos, watering and feeding, and tasks that turn into journal entries when you finish them.
+• Optional assistant with your own key: paste an Anthropic or OpenAI API key and ask questions about your garden. The app shows exactly what it will send before the first message. Photos never leave the device.
+
+WHAT IT DELIBERATELY DOES NOT DO
+
+No ratings, no scores, no predictions, no diagnosis, no accounts, no ads, no analytics, no purchases.
+
+HOME ASSISTANT
+
+Create a long-lived access token in Home Assistant, enter your base URL and token in Settings, and map a temperature and humidity entity to a grow space. Your phone is the recorder: readings are stored while the app is open, and each time you come back the app fills the gap from Home Assistant's history, up to 72 hours. Home Assistant is optional; without it the app still keeps your plants, journal, and tasks.
+
+OPEN SOURCE
+
+OpenTomato is MIT licensed. The full source code is on GitHub, and that is also where to ask questions or report a problem.

@@ -1,0 +1,179 @@
+# Release lanes for OpenTomato. Run them through scripts/release.sh, which
+# loads the environment, forces a UTF-8 locale for gym, and checks that the
+# pubspec build number equals AppDatabase.schemaVersion before building.
+#
+# Every Apple identifier is read from the environment with no default. This
+# repository is public; see docs/release.md for the variable names.
+
+opt_out_usage
+
+default_platform(:ios)
+
+APP_IDENTIFIER = ENV.fetch("APP_IDENTIFIER", "com.griffith.made.opentomato").freeze
+IPA_NAME = "OpenTomato.ipa".freeze
+
+platform :ios do
+  desc "Archive and export an App Store IPA locally without uploading"
+  lane :build_local do
+    prepare_flutter_release
+    build_open_tomato
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    api_key = app_store_connect_api_key_hash
+
+    sync_signing_if_configured(api_key: api_key)
+    prepare_flutter_release
+    build_open_tomato
+
+    upload_to_testflight(
+      api_key: api_key,
+      ipa: File.join(ipa_dir, IPA_NAME),
+      skip_waiting_for_build_processing: true,
+    )
+  end
+
+  desc "Create or refresh App Store signing assets with match (needs a team API key)"
+  lane :setup_signing do
+    match(
+      type: "appstore",
+      app_identifier: [APP_IDENTIFIER],
+      git_url: required_env!("MATCH_GIT_URL"),
+      team_id: required_env!("FASTLANE_TEAM_ID"),
+      api_key: app_store_connect_api_key_hash,
+      readonly: false,
+      force_legacy_encryption: true,
+    )
+  end
+
+  # produce has no API-key support; it signs in with the Apple ID in
+  # FASTLANE_APPLE_ID and asks for the two-factor code interactively.
+  desc "Register the bundle id and create the App Store Connect app record (run once, Apple ID session)"
+  lane :create_app do
+    produce(
+      username: required_env!("FASTLANE_APPLE_ID"),
+      app_identifier: APP_IDENTIFIER,
+      app_name: ENV.fetch("APP_STORE_APP_NAME", "OpenTomato"),
+      language: "en-US",
+      sku: ENV.fetch("APP_STORE_SKU", "opentomato"),
+      team_id: required_env!("FASTLANE_TEAM_ID"),
+    )
+  end
+
+  desc "Upload the version-controlled listing text and screenshots (no binary)"
+  lane :metadata do
+    deliver(
+      api_key: app_store_connect_api_key_hash,
+      app_identifier: APP_IDENTIFIER,
+      app_version: flutter_version_name,
+      metadata_path: File.join(fastlane_dir, "metadata"),
+      screenshots_path: File.join(fastlane_dir, "screenshots"),
+      skip_binary_upload: true,
+      overwrite_screenshots: true,
+      precheck_include_in_app_purchases: false,
+      run_precheck_before_submit: false,
+      submit_for_review: false,
+      force: true,
+    )
+  end
+
+  private_lane :prepare_flutter_release do
+    sh("cd #{project_root.shellescape} && flutter clean")
+    sh("cd #{project_root.shellescape} && flutter pub get")
+    sh("cd #{project_root.shellescape} && dart run build_runner build --delete-conflicting-outputs")
+    sh("cd #{project_root.shellescape} && flutter build ios --release --no-codesign")
+  end
+
+  private_lane :sync_signing_if_configured do |options|
+    if ENV["MATCH_GIT_URL"].to_s.strip.empty?
+      UI.important("MATCH_GIT_URL is not set; using locally installed signing assets.")
+      next
+    end
+
+    match(
+      type: "appstore",
+      app_identifier: [APP_IDENTIFIER],
+      git_url: ENV["MATCH_GIT_URL"],
+      team_id: required_env!("FASTLANE_TEAM_ID"),
+      api_key: options[:api_key],
+      readonly: true,
+      force_legacy_encryption: true,
+    )
+  end
+
+  private_lane :build_open_tomato do
+    team_id = required_env!("FASTLANE_TEAM_ID")
+
+    build_app(
+      workspace: File.join(ios_dir, "Runner.xcworkspace"),
+      scheme: "Runner",
+      configuration: "Release",
+      clean: false,
+      output_directory: ipa_dir,
+      output_name: IPA_NAME,
+      export_method: "app-store",
+      export_team_id: team_id,
+      export_options: export_options,
+      xcargs: "DEVELOPMENT_TEAM=#{team_id}",
+      include_bitcode: false,
+      include_symbols: true,
+      skip_package_ipa: false,
+    )
+  end
+end
+
+def fastlane_dir
+  FastlaneCore::FastlaneFolder.path
+end
+
+def ios_dir
+  File.expand_path("..", fastlane_dir)
+end
+
+def project_root
+  File.expand_path("..", ios_dir)
+end
+
+def ipa_dir
+  File.join(project_root, "build", "ios", "ipa")
+end
+
+def required_env!(name)
+  value = ENV[name].to_s.strip
+  UI.user_error!("Missing required environment variable: #{name}") if value.empty?
+  value
+end
+
+def app_store_connect_api_key_hash
+  options = {
+    key_id: required_env!("APP_STORE_CONNECT_KEY_ID"),
+    key_filepath: required_env!("APP_STORE_CONNECT_KEY_FILEPATH"),
+  }
+
+  issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"].to_s.strip
+  options[:issuer_id] = issuer_id unless issuer_id.empty?
+
+  app_store_connect_api_key(**options)
+end
+
+# The marketing version (major.minor.patch) comes from pubspec.yaml so the
+# listing, the binary, and the changelog cannot drift apart.
+def flutter_version_name
+  pubspec = File.read(File.join(project_root, "pubspec.yaml"))
+  found = pubspec.match(/^version:\s*(\d+\.\d+\.\d+)/)
+  UI.user_error!("pubspec.yaml has no version line") unless found
+  found[1]
+end
+
+# match exports the profile name it created; fall back to match's naming
+# convention when the lane runs against locally installed assets.
+def export_options
+  return {} if ENV["MATCH_GIT_URL"].to_s.strip.empty?
+
+  env_name = "sigh_#{APP_IDENTIFIER}_appstore_profile-name"
+  profile = ENV[env_name].to_s.strip
+  profile = "match AppStore #{APP_IDENTIFIER}" if profile.empty?
+
+  { provisioningProfiles: { APP_IDENTIFIER => profile } }
+end

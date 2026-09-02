@@ -178,7 +178,7 @@ class _Actions implements TodayActions {
   void addPlant() => context.push('/plants/create');
 
   @override
-  void openSettings() => context.go('/settings');
+  void openSettings() => context.push('/settings');
 
   @override
   void connectHomeAssistant() => context.push('/settings/home-assistant');
