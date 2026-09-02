@@ -90,7 +90,9 @@ class AppDatabase extends _$AppDatabase {
 
   /// MUST equal the pubspec build number. See CONVENTIONS.md.
   @override
-  int get schemaVersion => 1;
+  // 2: no schema change; build 2 was the iPhone-only 0.1.0 release build and
+  // the build number must equal this value.
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
