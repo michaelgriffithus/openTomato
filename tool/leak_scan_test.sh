@@ -16,8 +16,8 @@ if [ -z "$UNBOUNDED" ] && [ -z "$BOUNDED" ]; then
   echo "leak_scan_test: no word list available; skipped"
   exit 0
 fi
-[ -z "$UNBOUNDED" ] && UNBOUNDED='(?!)'
-[ -z "$BOUNDED" ] && BOUNDED='(?!)'
+[ -z "$UNBOUNDED" ] && UNBOUNDED='[^\s\S]'
+[ -z "$BOUNDED" ] && BOUNDED='[^\s\S]'
 # Fixtures: LEAK_SCAN_OK_LINE must pass, LEAK_SCAN_BAD_LINE must be flagged.
 : "${LEAK_SCAN_OK_LINE:=padding: EdgeInsets.all(8), indicator, budget, limit, constraint, secure}"
 : "${LEAK_SCAN_BAD_LINE:?set LEAK_SCAN_BAD_LINE in tool/leak_scan.local}"

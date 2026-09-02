@@ -18,31 +18,27 @@ if [ -z "$UNBOUNDED" ] && [ -z "$BOUNDED" ]; then
   echo "leak_scan: no word list available (tool/leak_scan.local or env); skipped"
   exit 0
 fi
-[ -z "$UNBOUNDED" ] && UNBOUNDED='(?!)'
-[ -z "$BOUNDED" ] && BOUNDED='(?!)'
+[ -z "$UNBOUNDED" ] && UNBOUNDED='[^\s\S]'
+[ -z "$BOUNDED" ] && BOUNDED='[^\s\S]'
 
-PATHS=(lib test tool docs scripts README.md CONVENTIONS.md CHANGELOG.md pubspec.yaml Gemfile ios android macos .github)
-EXISTING=()
-for p in "${PATHS[@]}"; do [ -e "$p" ] && EXISTING+=("$p"); done
+# The universe is what git could commit: tracked files plus untracked files
+# that are not ignored. Binaries and vendored trees are dropped by name.
+BINARY_OR_VENDORED='\.(png|jpg|jpeg|gif|ttf|otf|jar|p8|p12|cer|mobileprovision|ipa|zip)$|^ios/Pods/|/Flutter/|^tool/leak_scan'
 
 scan() {
-  rg -n -i -e "$UNBOUNDED" -e "$BOUNDED" \
-    --glob '!tool/leak_scan*' --glob '!**/*.ttf' --glob '!**/*.png' \
-    --glob '!ios/Pods/**' --glob '!**/Flutter/**' "$@"
+  # shellcheck disable=SC2046
+  rg -n -i -e "$UNBOUNDED" -e "$BOUNDED" "$@"
 }
 
 status=0
 if [ "${1:-}" = "--staged" ]; then
-  # Explicit file arguments bypass rg's globs, so drop binaries and the
-  # excluded trees here.
-  files=$(git diff --cached --name-only --diff-filter=ACMR \
-    | grep -v -E '^tool/leak_scan|\.(png|jpg|jpeg|ttf|otf|jar|p8|ipa)$|^ios/Pods/|/Flutter/' || true)
-  if [ -n "$files" ]; then
-    # shellcheck disable=SC2086
-    if scan $files; then status=1; fi
-  fi
+  files=$(git diff --cached --name-only --diff-filter=ACMR | grep -v -E "$BINARY_OR_VENDORED" || true)
 else
-  if scan "${EXISTING[@]}"; then status=1; fi
+  files=$(git ls-files --cached --others --exclude-standard | grep -v -E "$BINARY_OR_VENDORED" || true)
+fi
+if [ -n "$files" ]; then
+  # shellcheck disable=SC2086
+  if scan $files; then status=1; fi
 fi
 
 if [ "${1:-}" = "--history" ] && [ -d .git ]; then
