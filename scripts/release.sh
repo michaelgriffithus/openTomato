@@ -33,6 +33,7 @@ Optional:
   MATCH_GIT_URL + MATCH_PASSWORD   git-backed signing; required by setup_signing
   FASTLANE_APPLE_ID                Apple ID for create_app (interactive 2FA session)
   APP_STORE_APP_NAME               store name for create_app (default OpenTomato)
+  REVIEW_FIRST_NAME/LAST_NAME/EMAIL/PHONE  App Review contact for metadata (never in repo)
   RELEASE_ENV                      env file to source (default ~/.config/opentomato/release.env)
 USAGE
 }

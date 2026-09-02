@@ -32,6 +32,7 @@ document: it names environment variables, never their values.
 | `MATCH_GIT_URL`, `MATCH_PASSWORD` | `setup_signing`, `beta` | private git repo holding certificates and profiles |
 | `FASTLANE_APPLE_ID` | `create_app` | Apple ID; produce has no API-key support and asks for the two-factor code |
 | `APP_STORE_APP_NAME` | `create_app` | store name if "OpenTomato" is taken |
+| `REVIEW_FIRST_NAME`, `REVIEW_LAST_NAME`, `REVIEW_EMAIL`, `REVIEW_PHONE` | `metadata` | App Review contact (personal data, env only); phone in E.164 form |
 | `RELEASE_ENV` | wrapper | env file to source, default `~/.config/opentomato/release.env` |
 
 Only a **team** App Store Connect key can run the provisioning endpoints that

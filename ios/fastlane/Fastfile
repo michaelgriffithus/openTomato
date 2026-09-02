@@ -67,6 +67,7 @@ platform :ios do
       api_key: app_store_connect_api_key_hash,
       app_identifier: APP_IDENTIFIER,
       app_version: flutter_version_name,
+      app_review_information: review_contact,
       metadata_path: File.join(fastlane_dir, "metadata"),
       screenshots_path: File.join(fastlane_dir, "screenshots"),
       skip_binary_upload: true,
@@ -104,6 +105,21 @@ platform :ios do
 
   private_lane :build_open_tomato do
     team_id = required_env!("FASTLANE_TEAM_ID")
+    # With match, the Runner target (only Runner; Pods must stay untouched)
+    # is switched to manual signing with the App Store profile for the
+    # archive. The project file is restored afterwards so the tree stays clean.
+    manual_signing = !ENV["MATCH_GIT_URL"].to_s.strip.empty?
+    if manual_signing
+      update_code_signing_settings(
+        use_automatic_signing: false,
+        path: File.join(ios_dir, "Runner.xcodeproj"),
+        targets: ["Runner"],
+        team_id: team_id,
+        code_sign_identity: "Apple Distribution",
+        profile_name: appstore_profile_name,
+        bundle_identifier: APP_IDENTIFIER,
+      )
+    end
 
     build_app(
       workspace: File.join(ios_dir, "Runner.xcworkspace"),
@@ -120,11 +136,18 @@ platform :ios do
       include_symbols: true,
       skip_package_ipa: false,
     )
+  ensure
+    if manual_signing
+      sh("cd #{ios_dir.shellescape} && git checkout -- Runner.xcodeproj/project.pbxproj")
+    end
   end
 end
 
+# Absolute on purpose: fastlane evaluates the Fastfile inside ios/fastlane but
+# runs each action from ios/, so a relative "./metadata" would silently point
+# at a folder that does not exist and deliver would upload nothing.
 def fastlane_dir
-  FastlaneCore::FastlaneFolder.path
+  File.expand_path(FastlaneCore::FastlaneFolder.path)
 end
 
 def ios_dir
@@ -137,6 +160,29 @@ end
 
 def ipa_dir
   File.join(project_root, "build", "ios", "ipa")
+end
+
+# App Review contact details are personal data and never live in the repo;
+# they come from REVIEW_FIRST_NAME, REVIEW_LAST_NAME, REVIEW_EMAIL, and
+# REVIEW_PHONE (E.164, e.g. +1 555 123 4567). The notes come from
+# metadata/review_information/notes.txt. With no contact set, the review
+# section is left untouched so the rest of the listing still uploads.
+def review_contact
+  names = %w[REVIEW_FIRST_NAME REVIEW_LAST_NAME REVIEW_EMAIL REVIEW_PHONE]
+  values = names.map { |n| ENV[n].to_s.strip }
+  if values.all?(&:empty?)
+    UI.important("No REVIEW_* contact in the environment; skipping App Review information.")
+    return nil
+  end
+  missing = names.zip(values).select { |_, v| v.empty? }.map(&:first)
+  UI.user_error!("Missing App Review contact variables: #{missing.join(', ')}") unless missing.empty?
+  {
+    first_name: values[0],
+    last_name: values[1],
+    email_address: values[2],
+    phone_number: values[3],
+    notes: File.read(File.join(fastlane_dir, "metadata", "review_information", "notes.txt")),
+  }
 end
 
 def required_env!(name)
@@ -168,12 +214,13 @@ end
 
 # match exports the profile name it created; fall back to match's naming
 # convention when the lane runs against locally installed assets.
+def appstore_profile_name
+  profile = ENV["sigh_#{APP_IDENTIFIER}_appstore_profile-name"].to_s.strip
+  profile.empty? ? "match AppStore #{APP_IDENTIFIER}" : profile
+end
+
 def export_options
   return {} if ENV["MATCH_GIT_URL"].to_s.strip.empty?
 
-  env_name = "sigh_#{APP_IDENTIFIER}_appstore_profile-name"
-  profile = ENV[env_name].to_s.strip
-  profile = "match AppStore #{APP_IDENTIFIER}" if profile.empty?
-
-  { provisioningProfiles: { APP_IDENTIFIER => profile } }
+  { provisioningProfiles: { APP_IDENTIFIER => appstore_profile_name } }
 end
